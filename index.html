@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>Prospecta Local</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Prospecta Local</h1>
+    <span id="count" class="muted"></span>
+  </header>
+  <main id="app"></main>
+  <nav class="tabs" id="tabs">
+    <button data-act="tab" data-tab="leads">Leads</button>
+    <button data-act="tab" data-tab="search">Buscar</button>
+    <button data-act="tab" data-tab="settings">Ajustes</button>
+  </nav>
+  <input type="file" id="file-json" accept="application/json,.json" hidden>
+  <input type="file" id="file-csv" accept=".csv,text/csv" hidden>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

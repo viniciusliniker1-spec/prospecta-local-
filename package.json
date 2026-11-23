@@ -1,0 +1,8 @@
+{
+  "name": "prospecta-local",
+  "version": "0.1.0",
+  "description": "Prospecção semiautomática para negócios locais: leads do Google Maps, mensagens com IA, envio manual por WhatsApp, Instagram e e-mail.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": { "test": "node --test test/lib.test.mjs" }
+}
