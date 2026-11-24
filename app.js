@@ -3,7 +3,7 @@ import {
   normalizeBrPhone, formatPhone, waLink, mailtoLink, cleanHandle, igProfileLink, igSearchLink,
   placeToLead, ensureLink, siteState, parseSiteInput, buildPrompt, cleanModelText, parseEmailOutput, messageLimit,
   parseCsv, toCsv, leadFromRow,
-} from './lib.js';
+} from './lib.js?v=4';
 
 const KEY = 'prospecta-local.v1';
 const DEFAULTS = {
@@ -21,7 +21,9 @@ const PLACES_FIELDS = [
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    return { settings: { ...DEFAULTS, ...(s?.settings || {}) }, leads: s?.leads || {} };
+    const settings = { ...DEFAULTS, ...(s?.settings || {}) };
+    for (const k of ['link', 'brand']) if (!String(settings[k] || '').trim()) settings[k] = DEFAULTS[k];
+    return { settings, leads: s?.leads || {} };
   } catch {
     return { settings: { ...DEFAULTS }, leads: {} };
   }
