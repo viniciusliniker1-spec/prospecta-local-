@@ -7,7 +7,7 @@ import {
 
 const KEY = 'prospecta-local.v1';
 const DEFAULTS = {
-  sellerName: '', sellerCity: '', offer: '', link: '', tone: '',
+  sellerName: '', sellerCity: '', offer: '', link: 'https://prumopaginas.sitenoar.app/', tone: '',
   placesKey: '', geminiKey: '', model: 'gemini-3.1-flash-lite',
 };
 const PLACES_FIELDS = [
