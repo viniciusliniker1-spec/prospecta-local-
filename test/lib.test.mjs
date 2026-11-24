@@ -141,3 +141,9 @@ test('link do portfólio entra no prompt e é garantido na mensagem', () => {
   assert.equal(ensureLink('Oi https://a.b', 'https://a.b'), 'Oi https://a.b');
   assert.equal(ensureLink('Oi', ''), 'Oi');
 });
+
+test('marca entra no prompt', () => {
+  const p = buildPrompt({ seller: { name: 'Vini', brand: 'Prumo Páginas' }, lead: newLead({ name: 'X' }), channel: 'whatsapp' });
+  assert.match(p, /Marca\/empresa: Prumo Páginas/);
+  assert.match(p, /cite a marca Prumo Páginas/);
+});

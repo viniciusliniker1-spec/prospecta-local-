@@ -7,7 +7,7 @@ import {
 
 const KEY = 'prospecta-local.v1';
 const DEFAULTS = {
-  sellerName: '', sellerCity: '', offer: '', link: 'https://prumopaginas.sitenoar.app/', tone: '',
+  sellerName: '', brand: 'Prumo Páginas', sellerCity: '', offer: '', link: 'https://prumopaginas.sitenoar.app/', tone: '',
   placesKey: '', geminiKey: '', model: 'gemini-3.1-flash-lite',
 };
 const PLACES_FIELDS = [
@@ -142,7 +142,7 @@ async function geminiText(prompt) {
 }
 
 const seller = () => ({
-  name: state.settings.sellerName, city: state.settings.sellerCity,
+  name: state.settings.sellerName, brand: state.settings.brand, city: state.settings.sellerCity,
   offer: state.settings.offer, link: state.settings.link, tone: state.settings.tone,
 });
 
@@ -301,6 +301,7 @@ function viewSettings() {
   return `
     <h2>Sobre você</h2>
     ${input('sellerName', 'Seu nome', 'text', 'Como você se apresenta')}
+    ${input('brand', 'Nome da sua marca/empresa', 'text', 'Prumo Páginas')}
     ${input('sellerCity', 'Sua cidade', 'text', 'Campinas SP')}
     <label>O que você vende</label>
     <textarea style="min-height:70px" data-set="offer" placeholder="Ex.: landing pages profissionais para negócios locais, prontas em poucos dias">${esc(st.offer)}</textarea>

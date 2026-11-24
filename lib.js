@@ -144,6 +144,7 @@ export function buildPrompt({ seller, lead, channel, kind = 'first' }) {
 
   const about = [
     `Nome: ${seller.name || '(sem nome)'}`,
+    seller.brand ? `Marca/empresa: ${seller.brand}` : '',
     seller.city ? `Cidade: ${seller.city}` : '',
     `O que vende: ${seller.offer || 'criação de landing pages profissionais para negócios locais'}`,
     seller.link ? `Link de exemplos/portfólio: ${seller.link}` : '',
@@ -167,7 +168,7 @@ export function buildPrompt({ seller, lead, channel, kind = 'first' }) {
     channelRules,
     '',
     'REGRAS OBRIGATÓRIAS:',
-    '- Identifique-se pelo nome logo no começo e diga em uma frase o que você faz.',
+    seller.brand ? `- Identifique-se pelo nome e cite a marca ${seller.brand} logo no começo (ex.: "Sou ${seller.name || 'o vendedor'}, da ${seller.brand}") e diga em uma frase o que você faz.` : '- Identifique-se pelo nome logo no começo e diga em uma frase o que você faz.',
     '- Mencione o nome do negócio e um motivo concreto e verdadeiro para o contato, usando só os dados acima.',
     '- NUNCA invente fatos, números, clientes, prazos, preços ou resultados.',
     seller.link ? `- Inclua o link do portfólio exatamente como está, uma única vez, em uma frase curta (ex.: "Alguns exemplos de páginas que fiz: ${seller.link}"): ${seller.link}` : '',
