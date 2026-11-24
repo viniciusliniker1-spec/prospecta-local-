@@ -1,7 +1,7 @@
 import {
   STATUSES, BLOCKED_STATUSES, CHANNELS, CHANNEL_LABEL, MESSAGE_KINDS,
   normalizeBrPhone, formatPhone, waLink, mailtoLink, cleanHandle, igProfileLink, igSearchLink,
-  placeToLead, buildPrompt, cleanModelText, parseEmailOutput, messageLimit,
+  placeToLead, siteState, parseSiteInput, buildPrompt, cleanModelText, parseEmailOutput, messageLimit,
   parseCsv, toCsv, leadFromRow,
 } from './lib.js';
 
@@ -149,6 +149,7 @@ const seller = () => ({
 // ---------- listas ----------
 
 const leadsArray = () => Object.values(state.leads);
+const SITE_RANK = { none: 0, unknown: 1, has: 2 };
 
 function filteredLeads() {
   const { q, status, noSite, mobileOnly } = ui.filter;
@@ -157,14 +158,14 @@ function filteredLeads() {
   return leadsArray()
     .filter((l) => {
       if (status === 'Ativos' ? isBlocked(l) : status !== 'Todos' && l.status !== status) return false;
-      if (noSite && l.website) return false;
+      if (noSite && siteState(l) !== 'none') return false;
       if (mobileOnly && !normalizeBrPhone(l.phone)?.isMobile) return false;
       if (needle && !`${l.name} ${l.niche} ${l.city} ${l.address}`.toLowerCase().includes(needle)) return false;
       return true;
     })
     .sort((a, b) =>
       (order[a.status] - order[b.status])
-      || (Boolean(a.website) - Boolean(b.website))
+      || (SITE_RANK[siteState(a)] - SITE_RANK[siteState(b)])
       || (Number(Boolean(normalizeBrPhone(b.phone)?.isMobile)) - Number(Boolean(normalizeBrPhone(a.phone)?.isMobile)))
       || ((b.ratingCount || 0) - (a.ratingCount || 0)));
 }
@@ -174,7 +175,7 @@ function filteredLeads() {
 function render() {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === ui.tab));
   const all = leadsArray();
-  $('#count').textContent = `${all.length} leads · ${all.filter((l) => !l.website).length} sem site`;
+  $('#count').textContent = `${all.length} leads · ${all.filter((l) => siteState(l) === 'none').length} sem site`;
   $('#app').innerHTML = ui.tab === 'leads' ? viewLeads() : ui.tab === 'search' ? viewSearch() : viewSettings();
 }
 
@@ -200,7 +201,7 @@ function cardHtml(l) {
   const open = ui.open === l.id;
   const badges = [
     l.niche ? `<span class="badge">${esc(l.niche)}</span>` : '',
-    l.website ? '<span class="badge">tem site</span>' : '<span class="badge nosite">sem site</span>',
+    { has: '<span class="badge">tem site</span>', none: '<span class="badge nosite">sem site</span>', unknown: '<span class="badge">site não verificado</span>' }[siteState(l)],
     n?.isMobile ? '<span class="badge mobile">celular</span>' : '',
     l.rating ? `<span class="badge">★ ${esc(l.rating)} (${esc(l.ratingCount ?? 0)})</span>` : '',
   ].join('');
@@ -268,6 +269,8 @@ function detailHtml(l, n) {
         <div><label>Instagram (@usuário ou link)</label><input type="text" value="${esc(l.instagram)}" data-lf="instagram" data-id="${id}" placeholder="@negocio"></div>
         <div><label>E-mail</label><input type="email" value="${esc(l.email)}" data-lf="email" data-id="${id}" placeholder="contato@negocio.com"></div>
       </div>
+      <label>Site (URL, ou escreva "sem" se não tiver)</label>
+      <input type="text" value="${esc(l.website || (siteState(l) === 'none' ? 'sem' : ''))}" data-lf="website" data-id="${id}" placeholder="não verificado">
       <label>Observações</label>
       <textarea style="min-height:60px" data-lf="notes" data-id="${id}" placeholder="Ex.: pediu para falar na segunda">${esc(l.notes)}</textarea>
 
@@ -320,7 +323,7 @@ function viewSettings() {
       <button class="btn" data-act="export-csv">Exportar CSV</button>
       <button class="btn" data-act="import-csv">Importar CSV</button>
     </div>
-    <p class="muted">O CSV importado aceita colunas: nome, telefone, site, email, instagram, endereco, nicho, cidade.</p>
+    <p class="muted">O CSV importado aceita colunas: nome, telefone, site, email, instagram, endereco, nicho, cidade. Em <b>site</b>, deixe vazio se não verificou ou escreva <b>sem</b> se confirmou que não tem.</p>
     <div class="row"><button class="btn danger" data-act="wipe">Apagar todos os leads</button></div>
     <p class="muted">Boas práticas: envie só mensagens reveladoras de quem você é, respeite pedidos para parar e registre quem pediu (status "Não contatar"). Siga a LGPD.</p>`;
 }
@@ -479,13 +482,14 @@ function handleChange(e) {
   if (t.matches('[data-lf]')) {
     const l = state.leads[id];
     const field = t.dataset.lf;
-    l[field] = field === 'instagram' ? cleanHandle(t.value) || t.value.trim() : t.value.trim();
+    if (field === 'website') Object.assign(l, parseSiteInput(t.value));
+    else l[field] = field === 'instagram' ? cleanHandle(t.value) || t.value.trim() : t.value.trim();
     save();
     if (field === 'status' && isBlocked(l) && ui.filter.status === 'Ativos') {
       ui.open = null;
       toast(`Movido para "${l.status}". Para rever, filtre por Todos.`);
     }
-    if (field === 'status' || field === 'instagram') render();
+    if (field === 'status' || field === 'instagram' || field === 'website') render();
   } else if (t.matches('[data-kind]')) {
     setMsg(state.leads[id], chOf(id), { kind: t.value });
     save();

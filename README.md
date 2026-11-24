@@ -49,7 +49,7 @@ As chaves ficam salvas só no navegador (localStorage). Use uma chave exclusiva 
 ## Dados
 
 - **Backup (JSON)** e **Restaurar backup** em Ajustes. O backup não inclui as chaves.
-- **Exportar/Importar CSV** com colunas `nome, telefone, site, email, instagram, endereco, nicho, cidade`.
+- **Exportar/Importar CSV** com colunas `nome, telefone, site, email, instagram, endereco, nicho, cidade`. Na coluna `site`: a URL, `sem` (confirmado que não tem) ou vazio (não verificado; o app não afirma nada sobre o site nas mensagens).
 - Os dados existem só neste navegador e neste aparelho. Faça backup de vez em quando.
 
 ## Boas práticas (e limites)

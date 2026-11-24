@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeBrPhone, formatPhone, waLink, cleanHandle, igProfileLink, igSearchLink, placeToLead,
-  buildPrompt, cleanModelText, parseEmailOutput, parseCsv, toCsv, leadFromRow, newLead, mailtoLink,
+  buildPrompt, cleanModelText, parseEmailOutput, parseCsv, toCsv, leadFromRow, newLead, mailtoLink, siteState, parseSiteInput,
 } from '../lib.js';
 
 test('telefone: celular com DDD, com e sem 55', () => {
@@ -105,4 +105,31 @@ test('csv: ida e volta', () => {
 test('leadFromRow: sem nome é ignorado; instagram é limpo', () => {
   assert.equal(leadFromRow({ telefone: '1' }), null);
   assert.equal(leadFromRow({ name: 'A', instagram: 'https://instagram.com/Abc/' }, 3).instagram, 'abc');
+});
+
+test('site: tem / sem / não verificado', () => {
+  assert.equal(siteState(newLead({ website: 'https://a.com' })), 'has');
+  assert.equal(siteState(newLead()), 'none');
+  assert.equal(siteState(newLead({ siteUnknown: true })), 'unknown');
+  assert.deepEqual(parseSiteInput(''), { website: '', siteUnknown: true });
+  assert.deepEqual(parseSiteInput('Sem'), { website: '', siteUnknown: false });
+  assert.deepEqual(parseSiteInput('não'), { website: '', siteUnknown: false });
+  assert.deepEqual(parseSiteInput('negocio.com.br'), { website: 'https://negocio.com.br', siteUnknown: false });
+  assert.deepEqual(parseSiteInput('?'), { website: '', siteUnknown: true });
+});
+
+test('csv: coluna site vazia = não verificado; "sem" = sem site; ida e volta preserva', () => {
+  const rows = parseCsv('nome,telefone,site\nA,(19) 99876-5432,\nB,(19) 99876-5433,sem\nC,(19) 99876-5434,c.com.br\n');
+  const [a, b, c] = rows.map((r, i) => leadFromRow(r, i));
+  assert.equal(siteState(a), 'unknown');
+  assert.equal(siteState(b), 'none');
+  assert.equal(siteState(c), 'has');
+  const back = parseCsv(toCsv([a, b, c])).map((r, i) => leadFromRow(r, i));
+  assert.deepEqual(back.map(siteState), ['unknown', 'none', 'has']);
+});
+
+test('prompt: site não verificado não afirma nada sobre site', () => {
+  const p = buildPrompt({ seller: { name: 'Vini' }, lead: newLead({ name: 'X', siteUnknown: true }), channel: 'whatsapp' });
+  assert.match(p, /NÃO afirme nem sugira que não tem/);
+  assert.doesNotMatch(p, /não mostra site/);
 });

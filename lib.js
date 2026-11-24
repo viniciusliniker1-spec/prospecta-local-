@@ -64,12 +64,30 @@ export function igSearchLink(name, city) {
   return 'https://www.google.com/search?q=' + encodeURIComponent(`site:instagram.com "${name}" ${city || ''}`.trim());
 }
 
+/** 'has' (tem site), 'none' (sem site confirmado) ou 'unknown' (não verificado). */
+export function siteState(l) {
+  if (l.website) return 'has';
+  return l.siteUnknown ? 'unknown' : 'none';
+}
+
+const NO_SITE_RE = /^(sem|sem site|nao|não|nenhum|none|no|-)$/i;
+
+/** Interpreta o que o usuário digita no campo Site: URL, "sem" ou vazio (não verificado). */
+export function parseSiteInput(raw) {
+  const v = String(raw ?? '').trim();
+  if (!v) return { website: '', siteUnknown: true };
+  if (NO_SITE_RE.test(v)) return { website: '', siteUnknown: false };
+  if (v.includes('.')) return { website: /^https?:\/\//i.test(v) ? v : 'https://' + v, siteUnknown: false };
+  return { website: '', siteUnknown: true };
+}
+
 export function newLead(fields = {}) {
   return {
     id: '',
     name: '',
     phone: '',
     website: '',
+    siteUnknown: false,
     address: '',
     rating: null,
     ratingCount: null,
@@ -105,7 +123,7 @@ export function placeToLead(p, ctx = {}) {
 
 /** Monta o prompt para o Gemini escrever a mensagem. */
 export function buildPrompt({ seller, lead, channel, kind = 'first' }) {
-  const hasSite = Boolean(lead.website);
+  const site = siteState(lead);
   const goodRating = lead.rating >= 4.3 && lead.ratingCount >= 20;
   const channelRules = {
     whatsapp: 'Mensagem de WhatsApp: curta, tom natural e educado, no máximo 450 caracteres, sem assunto.',
@@ -117,7 +135,9 @@ export function buildPrompt({ seller, lead, channel, kind = 'first' }) {
     `Nome do negócio: ${lead.name}`,
     lead.niche ? `Segmento: ${lead.niche}` : '',
     lead.city ? `Cidade: ${lead.city}` : '',
-    hasSite ? `Site atual: ${lead.website} (não critique o site; só mencione se fizer sentido)` : 'O Google não mostra site para este negócio.',
+    site === 'has' ? `Site atual: ${lead.website} (não critique o site; só mencione se fizer sentido)`
+      : site === 'none' ? 'O Google não mostra site para este negócio.'
+        : 'Não sei se o negócio tem site: NÃO afirme nem sugira que não tem. Não mencione site.',
     goodRating ? `Avaliação no Google: ${lead.rating} (${lead.ratingCount} avaliações) — pode elogiar de forma natural, sem exagero.` : '',
     lead.notes ? `Observações do vendedor: ${lead.notes}` : '',
   ].filter(Boolean).join('\n');
@@ -221,7 +241,7 @@ function csvCell(v) {
 export function toCsv(leads) {
   const lines = [CSV_COLUMNS.join(',')];
   for (const l of leads) {
-    lines.push([l.name, l.phone, l.website, l.email, l.instagram, l.address, l.niche, l.city, l.status, l.rating ?? '']
+    lines.push([l.name, l.phone, siteState(l) === 'none' ? 'sem' : l.website, l.email, l.instagram, l.address, l.niche, l.city, l.status, l.rating ?? '']
       .map(csvCell).join(','));
   }
   return lines.join('\n');
@@ -233,13 +253,15 @@ export function leadFromRow(row, idx = 0) {
   const name = pick('nome', 'name', 'empresa', 'negocio');
   if (!name) return null;
   const phone = pick('telefone', 'phone', 'celular', 'whatsapp');
+  const site = parseSiteInput(pick('site', 'website', 'url'));
   const status = STATUSES.includes(pick('status')) ? pick('status') : 'Novo';
   const rating = parseFloat(String(pick('nota', 'rating')).replace(',', '.'));
   return newLead({
     id: 'csv:' + (onlyDigits(phone) || name.toLowerCase().replace(/\s+/g, '-')),
     name,
     phone,
-    website: pick('site', 'website', 'url'),
+    website: site.website,
+    siteUnknown: site.siteUnknown,
     email: pick('email', 'e-mail'),
     instagram: cleanHandle(pick('instagram', 'ig')),
     address: pick('endereco', 'address'),
