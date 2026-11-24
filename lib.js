@@ -170,12 +170,20 @@ export function buildPrompt({ seller, lead, channel, kind = 'first' }) {
     '- Identifique-se pelo nome logo no começo e diga em uma frase o que você faz.',
     '- Mencione o nome do negócio e um motivo concreto e verdadeiro para o contato, usando só os dados acima.',
     '- NUNCA invente fatos, números, clientes, prazos, preços ou resultados.',
+    seller.link ? `- Inclua o link do portfólio exatamente como está, uma única vez, em uma frase curta (ex.: "Alguns exemplos de páginas que fiz: ${seller.link}"): ${seller.link}` : '',
     '- Faça uma única pergunta simples no final (por exemplo, se pode mostrar um exemplo rápido).',
     '- Inclua uma frase clara dizendo que, se não fizer sentido, basta avisar que você não envia mais mensagens.',
     '- Sem pressão, sem urgência falsa, sem promessas de ganho. No máximo um emoji.',
     '- Não use markdown, não use listas e não explique o que está fazendo.',
     '- Responda SOMENTE com o texto da mensagem pronta para enviar.',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
+}
+
+/** Garante que o link do portfólio apareça na mensagem. */
+export function ensureLink(text, link) {
+  const l = String(link || '').trim();
+  if (!l || String(text).includes(l)) return text;
+  return `${String(text).trimEnd()}\n\nAlguns exemplos de páginas que fiz: ${l}`;
 }
 
 /** Remove cercas de código, aspas e rótulos que o modelo às vezes coloca. */

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeBrPhone, formatPhone, waLink, cleanHandle, igProfileLink, igSearchLink, placeToLead,
-  buildPrompt, cleanModelText, parseEmailOutput, parseCsv, toCsv, leadFromRow, newLead, mailtoLink, siteState, parseSiteInput,
+  buildPrompt, cleanModelText, parseEmailOutput, parseCsv, toCsv, leadFromRow, newLead, mailtoLink, siteState, parseSiteInput, ensureLink,
 } from '../lib.js';
 
 test('telefone: celular com DDD, com e sem 55', () => {
@@ -132,4 +132,12 @@ test('prompt: site não verificado não afirma nada sobre site', () => {
   const p = buildPrompt({ seller: { name: 'Vini' }, lead: newLead({ name: 'X', siteUnknown: true }), channel: 'whatsapp' });
   assert.match(p, /NÃO afirme nem sugira que não tem/);
   assert.doesNotMatch(p, /não mostra site/);
+});
+
+test('link do portfólio entra no prompt e é garantido na mensagem', () => {
+  const p = buildPrompt({ seller: { name: 'Vini', link: 'https://x.github.io/p/' }, lead: newLead({ name: 'X' }), channel: 'whatsapp' });
+  assert.match(p, /Inclua o link do portfólio/);
+  assert.match(ensureLink('Oi!', 'https://x.github.io/p/'), /https:\/\/x\.github\.io\/p\//);
+  assert.equal(ensureLink('Oi https://a.b', 'https://a.b'), 'Oi https://a.b');
+  assert.equal(ensureLink('Oi', ''), 'Oi');
 });

@@ -1,7 +1,7 @@
 import {
   STATUSES, BLOCKED_STATUSES, CHANNELS, CHANNEL_LABEL, MESSAGE_KINDS,
   normalizeBrPhone, formatPhone, waLink, mailtoLink, cleanHandle, igProfileLink, igSearchLink,
-  placeToLead, siteState, parseSiteInput, buildPrompt, cleanModelText, parseEmailOutput, messageLimit,
+  placeToLead, ensureLink, siteState, parseSiteInput, buildPrompt, cleanModelText, parseEmailOutput, messageLimit,
   parseCsv, toCsv, leadFromRow,
 } from './lib.js';
 
@@ -304,7 +304,7 @@ function viewSettings() {
     ${input('sellerCity', 'Sua cidade', 'text', 'Campinas SP')}
     <label>O que você vende</label>
     <textarea style="min-height:70px" data-set="offer" placeholder="Ex.: landing pages profissionais para negócios locais, prontas em poucos dias">${esc(st.offer)}</textarea>
-    ${input('link', 'Link de exemplos/portfólio (opcional)', 'text', 'https://...')}
+    ${input('link', 'Link do portfólio (vai em todas as mensagens)', 'text', 'https://...')}
     ${input('tone', 'Tom das mensagens (opcional)', 'text', 'Ex.: simpático e direto')}
 
     <h2>Chaves de API</h2>
@@ -340,9 +340,9 @@ async function onGenerate(id) {
     const raw = await geminiText(buildPrompt({ seller: seller(), lead: l, channel: ch, kind: m.kind }));
     if (ch === 'email') {
       const { subject, body } = parseEmailOutput(raw);
-      setMsg(l, ch, { subject, text: body, at: now() });
+      setMsg(l, ch, { subject, text: ensureLink(body, state.settings.link), at: now() });
     } else {
-      setMsg(l, ch, { text: cleanModelText(raw), at: now() });
+      setMsg(l, ch, { text: ensureLink(cleanModelText(raw), state.settings.link), at: now() });
     }
     save();
   } catch (e) {
